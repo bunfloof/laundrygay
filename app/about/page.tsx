@@ -78,7 +78,7 @@ const AboutPage: React.FC = () => {
               <p className="text-center text-sm text-foreground mt-2">Figure 1: fingering cschub binary</p>
             </div>
             <p className="text-base mb-4 leading-relaxed">
-              BrightAI is the company responsible for the cschub software that runs these Internet of Things (IoT) laundry machines. Each laundry machine is equipped with a Raspberry Pi, which is its primary communication interface. Each machine connect to a hub via a WiFi access point (SSID: csc-hub-0000). Each machine is assigned a unique IP address within a local WireGuard virtual private network using the 10.200.0.0/24 subnet. And they use Docker.
+              BrightAI is the company responsible for the cschub software that runs these Internet of Things (IoT) laundry machines. Each laundry machine is equipped with a Raspberry Pi, which is its primary communication interface. Each machine connect to a hub via a WiFi access point (SSID: csc-hub-0000). Each machine is assigned a unique IP address within a local WireGuard virtual private network using the 10.200.0.0/24 subnet. Rồi nó sài Docker.
             </p>
             <div className="my-6">
             <Item
@@ -103,55 +103,33 @@ const AboutPage: React.FC = () => {
             <p className="text-base mb-4 leading-relaxed">
               Too bad their software distributor intentionally doesn’t follow best security practices, so consider the entire BrightAI API compromised. We’ve uploaded our infected payload to the BrightAI API, the hubs download the infected code, and we gain remote root access to all of their hubs. We’ve reverse engineered the cschub binary, developed, and injected our own code into their hubs.
             </p>
-            <p className="text-base mb-4 leading-relaxed">
-              The infrastructure, including our website and API is strategically hosted on my home server in Vietnam on a dynamic IP behind Cloudflare WAF. Cloudflare abuse won’t do much except give you the real IP of this website. The Vietnamese government doesn’t bend down to U.S. corporate interests or their capitalist agenda. Good luck taking it down if you even care.
-            </p>
-            <h2 className="text-2xl font-bold mb-4 pt-4">API Documentation</h2>
-            <p className="text-base mb-4 leading-relaxed">
-              Our API is free to use. Just simply send a POST request to the root endpoint with the following JSON body to start a laundry machine.
-            </p>
-            
-            <h3 className="text-xl font-semibold mb-2">Endpoint</h3>
-            <p className="text-base mb-4 leading-relaxed">
-              Send a POST request to:
-            </p>
-            <div className="bg-secondary p-3 rounded-md mb-4">
-              <code className="text-sm font-mono">/</code>
+          </section>
+          <section>
+            <h2 className="text-2xl font-bold mb-4">Hosted in Vietnam</h2>
+            <div className="my-6">
+              <Item
+                original="/Sclient_FjqDtmVXSS.png"
+                thumbnail="/Sclient_FjqDtmVXSS.png"
+                width="1024"
+                height="690"
+                alt="Communism2"
+              >
+                {({ ref, open }) => (
+                  <img 
+                    ref={ref as React.Ref<HTMLImageElement>}
+                    onClick={open}
+                    src="/r92a0jfa9.jpg" 
+                    alt="Communism3" 
+                    className="w-full rounded-lg cursor-pointer" 
+                  />
+                )}
+              </Item>
+              <p className="text-center text-sm text-foreground mt-2">Figure 3: foxomy viet nam servers</p>
             </div>
-            
-            <h3 className="text-xl font-semibold mb-2">Headers</h3>
             <p className="text-base mb-4 leading-relaxed">
-              Include the following header in your request:
+              Our infrastructure, including this website and API is strategically hosted in Vietnam on VNPT’s nortorious network known for torrenting movies. Cloudflare abuse most likely won’t do much except give you the real IP of this website. The Vietnamese government doesn’t bend down to U.S. corporate interests or their capitalist agendas. Good luck taking it down if you even care.
             </p>
-            <div className="bg-secondary p-3 rounded-md mb-4">
-              <code className="text-sm font-mono">Content-Type: application/json</code>
-            </div>
-            
-            <h3 className="text-xl font-semibold mb-2">Request Body</h3>
-            <p className="text-base mb-4 leading-relaxed">
-              The request body should be a JSON object with the following properties:
-            </p>
-            <ul className="list-disc list-inside mb-4">
-              <li><code className="text-sm font-mono">location</code>: The selected location</li>
-              <li><code className="text-sm font-mono">room</code>: The selected room</li>
-              <li><code className="text-sm font-mono">machine</code>: The selected machine</li>
-            </ul>
-            
-            <h3 className="text-xl font-semibold mb-2">Example Request</h3>
-            <p className="text-base mb-4 leading-relaxed">
-              Here’s an example of how to make a request using curl:
-            </p>
-            <div className="bg-secondary p-3 rounded-md mb-4 overflow-x-auto">
-              <pre className="text-sm font-mono">
-                {`curl -X POST https://laundry.ucsc.gay/ \\
-              -H "Content-Type: application/json" \\
-              -d '{"location": "<selectedLocation>", "room": "<selectedRoom>", "machine": "<selectedMachine>"}'`}
-              </pre>
-            </div>
-            
-            <p className="text-base mb-4 leading-relaxed">
-              Replace <code className="text-sm font-mono">&lt;selectedLocation&gt;</code>, <code className="text-sm font-mono">&lt;selectedRoom&gt;</code>, and <code className="text-sm font-mono">&lt;selectedMachine&gt;</code> with your actual values.
-            </p>
+           
           </section>
         </Gallery>
       </div>

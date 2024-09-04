@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { locations } from './locations';
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { Star } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -77,6 +78,7 @@ const QrReaderWithConfirmation: React.FC = () => {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const latestMachineDataRef = useRef<Machine | null>(null);
   const [isRoomSupported, setIsRoomSupported] = useState<boolean>(true);
+  const [isDefault, setIsDefault] = useState(false);
 
   const onScanSuccess = async (result: QrScanner.ScanResult) => {
     console.log(result);
@@ -258,9 +260,28 @@ const QrReaderWithConfirmation: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const defaultTab = localStorage.getItem('defaultTab');
+    setIsDefault(defaultTab === 'laundryqrscanner');
+  }, []);
+
+  const handleSetDefaultTab = () => {
+    const newIsDefault = !isDefault;
+    localStorage.setItem('defaultTab', newIsDefault ? 'laundryqrscanner' : 'laundrymachineselector');
+    setIsDefault(newIsDefault);
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="text-2xl font-bold">QR Scanner</CardHeader>
+<div className="flex justify-between items-center p-6">
+        <h2 className="text-2xl font-bold">QR Scanner</h2>
+        <button
+          onClick={handleSetDefaultTab}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {isDefault ? 'Default Tab' : 'Set as Default Tab'}
+        </button>
+      </div>
       <CardContent>
         {!cameraAccessDenied && cameras.length > 0 && selectedCamera && (
           <div className="space-y-1">

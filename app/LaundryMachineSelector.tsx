@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { locations } from './locations';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Star } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -76,6 +76,7 @@ const LaundryMachineSelector: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [open, setOpen] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [isDefault, setIsDefault] = useState(false);
 
   const latestMachinesRef = useRef<Machine[]>([]);
   
@@ -182,11 +183,30 @@ const LaundryMachineSelector: React.FC = () => {
   };
 
   const selectedMachineData = machines.find(m => m.licensePlate === selectedMachine);
+  
+  useEffect(() => {
+    const defaultTab = localStorage.getItem('defaultTab');
+    setIsDefault(defaultTab === 'laundrymachineselector');
+  }, []);
 
-return (
-  <>
+  const handleSetDefaultTab = () => {
+    const newIsDefault = !isDefault;
+    localStorage.setItem('defaultTab', newIsDefault ? 'laundrymachineselector' : 'laundryqrscanner');
+    setIsDefault(newIsDefault);
+  };
+
+  return (
+    <>
     <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="text-2xl font-bold">Selector</CardHeader>
+      <div className="flex justify-between items-center p-6">
+        <h2 className="text-2xl font-bold">Selector</h2>
+        <button
+          onClick={handleSetDefaultTab}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {isDefault ? 'Default Tab' : 'Set as Default Tab'}
+        </button>
+      </div>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1">
