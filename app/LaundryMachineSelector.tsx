@@ -197,7 +197,7 @@ const LaundryMachineSelector: React.FC = () => {
 
   return (
     <>
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto rounded-t-none">
       <div className="flex justify-between items-center p-6">
         <h2 className="text-2xl font-bold">Selector</h2>
         <button

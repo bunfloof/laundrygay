@@ -272,8 +272,8 @@ const QrReaderWithConfirmation: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-<div className="flex justify-between items-center p-6">
+    <Card className="w-full max-w-md mx-auto rounded-t-none">
+      <div className="flex justify-between items-center p-6">
         <h2 className="text-2xl font-bold">QR Scanner</h2>
         <button
           onClick={handleSetDefaultTab}

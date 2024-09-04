@@ -70,7 +70,7 @@ const TabbedCardInterface: React.FC = () => {
     <div className="flex items-center justify-center bg-background min-h-screen" style={{ minHeight: 'calc(var(--vh, 1vh) * 100)' }}>
       <Card className="w-full max-w-md border-0 shadow-none">
         <Tabs value={currentTab} onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 mt-2 rounded-b-none">
             <TabsTrigger value="laundrymachineselector">Selector</TabsTrigger>
             <TabsTrigger value="laundryqrscanner">QR Scanner</TabsTrigger>
           </TabsList>

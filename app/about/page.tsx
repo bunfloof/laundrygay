@@ -78,7 +78,7 @@ const AboutPage: React.FC = () => {
               <p className="text-center text-sm text-foreground mt-2">Figure 1: fingering cschub binary</p>
             </div>
             <p className="text-base mb-4 leading-relaxed">
-              BrightAI is the company responsible for the cschub software that runs these Internet of Things (IoT) laundry machines. Each laundry machine is equipped with a Raspberry Pi, which is its primary communication interface. Each machine connect to a hub via a WiFi access point (SSID: csc-hub-0000). Each machine is assigned a unique IP address within a local WireGuard virtual private network using the 10.200.0.0/24 subnet. Rồi nó sài Docker.
+              BrightAI is the company responsible for the cschub software that runs these Internet of Things (IoT) laundry machines. Each laundry machine is equipped with a Raspberry Pi, which is its primary communication interface. Each machine connect to a hub via a WiFi access point (SSID: csc-hub-0000). Each machine is assigned a unique IP address within a local WireGuard virtual private network using the 10.200.0.0/24 subnet. And they use Docker.
             </p>
             <div className="my-6">
             <Item
@@ -108,11 +108,11 @@ const AboutPage: React.FC = () => {
             <h2 className="text-2xl font-bold mb-4">Hosted in Vietnam</h2>
             <div className="my-6">
               <Item
-                original="/Sclient_FjqDtmVXSS.png"
-                thumbnail="/Sclient_FjqDtmVXSS.png"
-                width="1024"
-                height="690"
-                alt="Communism2"
+                original="/r92a0jfa9.jpg"
+                thumbnail="/r92a0jfa9.jpg"
+                width="1200"
+                height="630"
+                alt="Communism3"
               >
                 {({ ref, open }) => (
                   <img 
