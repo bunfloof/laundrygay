@@ -24,8 +24,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer"
 import QrScanner from 'qr-scanner';
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
 interface Machine {
   licensePlate: string;
@@ -63,26 +61,28 @@ interface AvailableClient {
   room: string;
 }
 
-interface WsMachine {
-  cycleType: number;
-  keypadSelect: string;
-  machineStatus: string;
+interface WebSocketMessage {
   machineType: number;
+  machineStatus: string;
+  keypadSelect: string;
   remainingCycleMins: number;
+  timestamp: number;
 }
 
-interface QrReaderProps {
-  selectedAPI: string;
+interface QrResponse {
+  licensePlate: string;
+  locationId: string;
+  qrCodeId: string;
+  roomId: string;
 }
 
-const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
+const QrReaderWithConfirmation: React.FC = () => {
   const [scannedResult, setScannedResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cameras, setCameras] = useState<QrScanner.Camera[]>([]);
   const [selectedCamera, setSelectedCamera] = useState<string>('');
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [selectedMachineData, setSelectedMachineData] = useState<Machine | null>(null);
-  const [selectedWsMachineData, setSelectedWsMachineData] = useState<WsMachine | null>(null);
   const [open, setOpen] = useState(false);
   const [response, setResponse] = useState<ApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -94,11 +94,9 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
   const latestMachineDataRef = useRef<Machine | null>(null);
   const [isRoomSupported, setIsRoomSupported] = useState<boolean>(true);
   const [isDefault, setIsDefault] = useState(false);
+  const [websocketData, setWebsocketData] = useState<WebSocketMessage | null>(null);
   const websocket = useRef<WebSocket | null>(null);
-
-  useEffect(() => {
-    setResponse(null);
-  }, [selectedMachineData]);
+  const [qrData, setQrData] = useState<QrResponse | null>(null);
   
   const onScanSuccess = async (result: QrScanner.ScanResult) => {
     console.log(result);
@@ -110,6 +108,76 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
       setOpen(true);
     }
   };
+
+  useEffect(() => {
+    if (qrData && open) {
+      websocket.current = new WebSocket('wss://laundry.ucsc.gay/machinestatusws');
+
+      websocket.current.onopen = () => {
+        console.log('WebSocket connected');
+      };
+
+      websocket.current.onmessage = (event) => {
+        console.log('Raw WebSocket message:', event.data);
+        let fullMessage;
+        try {
+          fullMessage = JSON.parse(event.data);
+        } catch (error) {
+          console.error('Failed to parse WebSocket message as JSON:', error);
+          fullMessage = event.data; // Keep the raw message if it's not JSON
+        }
+
+        let simplifiedMessage: WebSocketMessage;
+
+        if (typeof fullMessage === 'object' && fullMessage !== null) {
+          simplifiedMessage = {
+            machineType: fullMessage.machineType ?? 'Unknown',
+            machineStatus: `${fullMessage.machineStatus ?? 'Unknown'}`,
+            keypadSelect: fullMessage.keypadSelect ?? 'Unknown',
+            remainingCycleMins: fullMessage.remainingCycleMins ?? 'Unknown',
+            timestamp: Date.now()
+          };
+        } else {
+          // Handle non-JSON messages
+          simplifiedMessage = {
+            machineType: 0,
+            machineStatus: `Raw message: ${fullMessage}`,
+            keypadSelect: 'Unknown',
+            remainingCycleMins: 0,
+            timestamp: Date.now()
+          };
+        }
+
+        console.log('Processed WebSocket message:', simplifiedMessage);
+        setWebsocketData(simplifiedMessage);
+      };
+
+      websocket.current.onerror = (error) => {
+        //console.error('WebSocket error:', error);
+        setError('WebSocket connection error. Please try again.');
+      };
+
+      const interval = setInterval(() => {
+        if (websocket.current && websocket.current.readyState === WebSocket.OPEN) {
+          const message = JSON.stringify({
+            location: qrData.locationId,
+            room: qrData.roomId,
+            machine: qrData.licensePlate
+          });
+          websocket.current.send(message);
+          console.log('Message sent to WebSocket:', message);
+        }
+      }, 250);
+
+      return () => {
+        clearInterval(interval);
+        if (websocket.current) {
+          console.log('Closing WebSocket connection');
+          websocket.current.close();
+        }
+      };
+    }
+  }, [qrData, open]);
 
   const onScanFail = (error: string | Error) => {
     console.error(error);
@@ -138,90 +206,29 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
   };
 
   const fetchMachineData = useCallback(async (code: string) => {
+    console.log("helloooooo");
+    console.log("helloooooo");
     try {
-      console.log("fetchmcahineData")
-      const url = selectedAPI === 'internal'
-        ? `https://laundry.ucsc.gay/qr?code=${code}`
-        : `https://mycscgo.com/api/v1/machine/qr/${code}`;
-      const machineResponse = await fetch(url);
+      const machineResponse = await fetch(`https://laundry.ucsc.gay/qr?code=${code}`);
       const machineData: Machine = await machineResponse.json();
       setSelectedMachineData(machineData);
-  
+      console.log("this is the data", machineData);
+
       const clientsResponse = await fetch('https://laundry.ucsc.gay/clients');
       const availableClients: AvailableClient[] = await clientsResponse.json();
       
       const isSupported = availableClients.some((client: AvailableClient) => 
         client.location === machineData.locationId && client.room === machineData.roomId
       );
+      console.log("helloooooo");
       console.log(isSupported);
+      
       setIsRoomSupported(isSupported);
     } catch (err) {
       console.error('Failed to fetch data:', err);
       setError('Failed to fetch data. Please try again.');
     }
   }, []);
-
-  useEffect(() => {
-    if (qrCode && open && selectedAPI === 'internal') {
-      websocket.current = new WebSocket('wss://laundry.ucsc.gay/machinestatusws');
-
-      websocket.current.onopen = () => {
-        console.log('WebSocket connected');
-      };
-
-      websocket.current.onmessage = (event) => {
-        console.log('Raw WebSocket message:', event.data);
-        let fullMessage;
-        try {
-          fullMessage = JSON.parse(event.data);
-        } catch (error) {
-          console.error('Failed to parse WebSocket message as JSON:', error);
-          fullMessage = event.data; // Keep the raw message if it's not JSON
-        }
-
-        console.log('Processed WebSocket message:', fullMessage);
-
-        setSelectedWsMachineData(fullMessage);
-        console.log("we now changed it to", selectedWsMachineData)
-      };
-
-      websocket.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setError('WebSocket connection error. Please try again.');
-      };
-
-      const interval = setInterval(() => {
-        if (websocket.current && websocket.current.readyState === WebSocket.OPEN) {
-          const message = JSON.stringify({
-            location: selectedMachineData?.locationId,
-            room: selectedMachineData?.roomId,
-            machine: selectedMachineData?.licensePlate
-          });
-          websocket.current.send(message);
-          console.log('Message sent to WebSocket:', message);
-        }
-      }, 3000);
-
-      return () => {
-        clearInterval(interval);
-        if (websocket.current) {
-          console.log('Closing WebSocket connection');
-          websocket.current.close();
-        }
-      };
-    }
-    if (qrCode && open && selectedAPI !== 'internal') {
-      fetchMachineData(qrCode);
-      const interval = setInterval(() => {
-        fetchMachineData(qrCode);
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [qrCode, fetchMachineData, open]);
-
-  useEffect(() => {
-    console.log("selectedWsMachineData updated:", selectedWsMachineData);
-  }, [selectedWsMachineData]);
 
   useEffect(() => {
     getCameras();
@@ -351,8 +358,14 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
     <Card className="w-full max-w-md mx-auto rounded-t-none">
       <div className="flex justify-between items-center p-6">
         <h2 className="text-2xl font-bold">QR Scanner</h2>
+        <button
+          onClick={handleSetDefaultTab}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {isDefault ? 'Default Tab' : 'Set as Default Tab'}
+        </button>
       </div>
-      <CardContent className="pb-4">
+      <CardContent>
         {!cameraAccessDenied && cameras.length > 0 && selectedCamera && (
           <div className="space-y-1">
             <label className="block text-sm font-medium text-foreground">Camera</label>
@@ -406,7 +419,7 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
           </div>
         </div>
         ) : (
-          <Alert className="bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100">
+          <Alert className="mt-4 bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100">
             <AlertDescription>
               Camera access denied. Please check your browser settings and grant camera permissions to use the QR scanner.
             </AlertDescription>
@@ -424,37 +437,23 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )} */}
-        {response && (
-        <Alert className={`mt-4 ${
-          response.status === 200
-            ? 'bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100'
-            : 'bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100'
-        }`}>
-          <AlertDescription>
-            Status: {response.status}<br />
-            Response: {response.message}
-          </AlertDescription>
-        </Alert>
-      )}
       </CardContent>
-      <CardFooter className="flex flex-col items-stretch">
-        <div className="flex justify-center mb-4">
-          {!cameraAccessDenied && selectedCamera && (
-            <>
-              <Button onClick={toggleScanning} className="mr-2">
-                {isScanning ? 'Stop scanning' : 'Start scanning'}
-              </Button>
-              <span className="text-foreground ml-2 self-center">
-                {isScanning ? 'Scanning...' : 'Not scanning'}
-              </span>
-            </>
-          )}
-          {(cameraAccessDenied || !selectedCamera) && (
-            <Button onClick={getCameras}>
-              Retry Camera Access
-            </Button>
-          )}
-        </div>
+      <CardFooter className="flex justify-center">
+      {!cameraAccessDenied && selectedCamera && (
+        <>
+          <Button onClick={toggleScanning} className="mr-2">
+            {isScanning ? 'Stop scanning' : 'Start scanning'}
+          </Button>
+          <span className="text-foreground ml-2">
+            {isScanning ? 'Scanning...' : 'Not scanning'}
+          </span>
+        </>
+      )}
+      {(cameraAccessDenied || !selectedCamera) && (
+          <Button onClick={getCameras}>
+            Retry Camera Access
+          </Button>
+        )}
       </CardFooter>
 
       {isDesktop ? (
@@ -475,25 +474,22 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
                     Room not supported. Please contact support for assistance.
                   </AlertDescription>
                 </Alert>
-                ) : selectedAPI === 'internal' ? (
-                  <div className="p-2 bg-secondary text-secondary-foreground rounded-md overflow-auto max-h-[50vh]">
-                    <pre className="whitespace-pre-wrap break-words text-xs">
-                      {selectedWsMachineData === null
-                        ? 'Connecting to websocket'
-                        : JSON.stringify(selectedWsMachineData, null, 2) || 'N/A'}
-                    </pre>
-                  </div>
-
-                ) : selectedAPI !== 'internal' && selectedMachineData?.type === 'washer' ? (
+                ) : websocketData && websocketData?.machineType == 1 ? (
                   <>
-                    <p>Soil: {selectedMachineData.settings.soil || 'N/A'}</p>
-                    <p>Cycle: {selectedMachineData.settings.cycle || 'N/A'}</p>
-                    <p>Temperature: {selectedMachineData.settings.washerTemp || 'N/A'}</p>
+                    <p>Machine Type: {websocketData.machineType || 'N/A'}</p>
+                    <p>Machine Status: {websocketData.machineStatus || 'N/A'}</p>
+                    <p>Keypad Select: {websocketData.keypadSelect || 'N/A'}</p>
+                    <p>Timestamp: {new Date(websocketData.timestamp).toISOString()}</p>
                   </>
-                ) : selectedAPI !== 'internal' && selectedMachineData?.type === 'dryer' ? (
-                  <p>Temperature: {selectedMachineData.settings.dryerTemp || 'N/A'}</p>
+                ) : websocketData?.machineType == 0 ? (
+                  <>
+                    <p>Machine Type: {websocketData.machineType || 'N/A'}</p>
+                    <p>Keypad Select: {websocketData.keypadSelect || 'N/A'}</p>
+                    <p>Machine Status: {websocketData.machineStatus || 'N/A'}</p>
+                    <p>Timestamp: {new Date(websocketData.timestamp).toISOString()}</p>
+                  </>
                 ) : (
-                  <p>No settings available</p>
+                  <p>Connecting to server...</p>
                 )}
                 {/* <p>Time Remaining: {selectedMachineData?.timeRemaining || 'N/A'} minutes</p> */}
               </div>
@@ -524,22 +520,20 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
                     Room not supported. Please contact support for assistance.
                   </AlertDescription>
                 </Alert>
-                ) : selectedAPI === 'internal' && selectedWsMachineData?.machineType === 1 ? (
-                  <div className="p-2 bg-secondary text-secondary-foreground rounded-md overflow-auto max-h-[50vh]">
-                    <pre className="whitespace-pre-wrap break-words text-xs">
-                      {selectedWsMachineData === null
-                        ? 'Connecting to websocket'
-                        : JSON.stringify(selectedWsMachineData, null, 2) || 'N/A'}
-                    </pre>
-                  </div>
-                ) : selectedAPI !== 'internal' && selectedMachineData?.type === 'washer' ? (
+                ) : websocketData && websocketData?.machineType == 1 ? (
                   <>
-                    <p>Soil: {selectedMachineData.settings.soil || 'N/A'}</p>
-                    <p>Cycle: {selectedMachineData.settings.cycle || 'N/A'}</p>
-                    <p>Temperature: {selectedMachineData.settings.washerTemp || 'N/A'}</p>
+                    <p>Machine Type: {websocketData.machineType || 'N/A'}</p>
+                    <p>Machine Status: {websocketData.machineStatus || 'N/A'}</p>
+                    <p>Keypad Select: {websocketData.keypadSelect || 'N/A'}</p>
+                    <p>Timestamp: {new Date(websocketData.timestamp).toISOString()}</p>
                   </>
-                ) : selectedAPI !== 'internal' && selectedMachineData?.type === 'dryer' ? (
-                  <p>Temperature: {selectedMachineData.settings.dryerTemp || 'N/A'}</p>
+                ) : websocketData?.machineType == 0 ? (
+                  <>
+                    <p>Machine Type: {websocketData.machineType || 'N/A'}</p>
+                    <p>Keypad Select: {websocketData.keypadSelect || 'N/A'}</p>
+                    <p>Machine Status: {websocketData.machineStatus || 'N/A'}</p>
+                    <p>Timestamp: {new Date(websocketData.timestamp).toISOString()}</p>
+                  </>
                 ) : (
                   <p>No settings available</p>
                 )}
@@ -556,6 +550,19 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
+      )}
+
+      {response && (
+        <Alert className={`mt-4 ${
+          response.status === 200
+            ? 'bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100'
+            : 'bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100'
+        }`}>
+          <AlertDescription>
+            Status: {response.status}<br />
+            Response: {response.message}
+          </AlertDescription>
+        </Alert>
       )}
     </Card>
   );

@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-      <NextTopLoader color="hsl(var(--foreground))" showSpinner={false}/>
+      <NextTopLoader color="hsl(var(--foreground))" showSpinner={false} speed={100} crawlSpeed={10}/>
         <ThemeProvider
             attribute="class"
             defaultTheme="system"
