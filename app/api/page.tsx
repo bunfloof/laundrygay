@@ -39,6 +39,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
+import { useRouter } from 'next/navigation';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
@@ -52,6 +53,7 @@ interface Endpoint {
 }
 
 const ApiPage: React.FC = () => {
+  const router = useRouter();
   const [activeEndpoint, setActiveEndpoint] = useState<Endpoint | null>(null);
   const [requestBody, setRequestBody] = useState<string>('');
   const [queryParams, setQueryParams] = useState<Record<string, string>>({});
@@ -123,7 +125,7 @@ const ApiPage: React.FC = () => {
     {
       path: "/machinestatus",
       method: "GET",
-      description: "Retrieve the status of a machine.",
+      description: "Retrieve the status of a machine. 0001 = unpaid/available, 0004 = pressStart/paid, 8008 = running, ",
       queryParams: {
         location: "string",
         room: "string",
@@ -312,11 +314,11 @@ const ApiPage: React.FC = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       <Breadcrumb className="mb-6">
           <BreadcrumbList>
-            <BreadcrumbItem>
-              <Link href="/" passHref legacyBehavior>
-                <BreadcrumbLink>Home</BreadcrumbLink>
-              </Link>
-            </BreadcrumbItem>
+            <span>
+              <BreadcrumbLink>
+                <button onClick={() => router.back()}>Back</button>
+              </BreadcrumbLink>
+            </span>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>API Documentation</BreadcrumbPage>

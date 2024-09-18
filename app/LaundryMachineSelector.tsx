@@ -45,7 +45,7 @@ interface Room {
 
 interface Machine {
   licensePlate: string;
-  type: 'washer' | 'dryer';
+  type: 'washer' | 'dryer' | 'unknown';
   stickerNumber: number;
   settings: {
     soil?: string;
@@ -82,6 +82,12 @@ interface AvailableClient {
 interface MachinesArchive {
   licensePlate: string;
   stickerNumber: number;
+}
+
+interface LaundryMachine {
+  location: string;
+  room: string;
+  machine: string;
 }
 
 const locations = [
@@ -350,8 +356,10 @@ const LaundryMachineSelector: React.FC<LaundryMachineSelectorProps> = ({ selecte
         });
 
         const updatedMachines = [
-          ...(machinesWithStickers?.filter(m => m.type === 'washer') || []).sort((a, b) => (b.stickerNumber || 0) - (a.stickerNumber || 0)),
-          ...(machinesWithStickers?.filter(m => m.type === 'dryer') || []).sort((a, b) => (a.stickerNumber || 0) - (b.stickerNumber || 0))
+          ...(machinesWithStickers?.filter(m => m.type === 'washer' || m.type === 'unknown') || [])
+            .sort((a, b) => (b.stickerNumber || 0) - (a.stickerNumber || 0)),
+          ...(machinesWithStickers?.filter(m => m.type === 'dryer') || [])
+            .sort((a, b) => (a.stickerNumber || 0) - (b.stickerNumber || 0))
         ];
 
         setInternalAPIMachines(updatedMachines);
@@ -470,8 +478,51 @@ const LaundryMachineSelector: React.FC<LaundryMachineSelectorProps> = ({ selecte
       });
       const data: string = await res.text();
       setResponse({ status: res.status, message: data });
+      
+      if (res.ok && !data.toLowerCase().includes('error')) {
+        const newMachine: LaundryMachine = {
+          location: selectedLocation,
+          room: selectedRoom,
+          machine: selectedMachine,
+        };
+        addMachineToLocalStorage(newMachine);
+  
+        const email = localStorage.getItem('email');
+        const offsetTime = localStorage.getItem('offsetTime');
+  
+        if (email && email.trim() !== '' && offsetTime && offsetTime.trim() !== '') {
+          try {
+            const emailRes = await fetch('https://laundry.ucsc.gay/email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...newMachine,
+                email,
+                offset_time: parseInt(offsetTime),
+              }),
+            });
+  
+            if (!emailRes.ok) {
+              console.error('Failed to set up email notification');
+            }
+          } catch (emailError) {
+            console.error('Error setting up email notification:', emailError);
+          }
+        }
+      }
     } catch (error) {
       if (error instanceof Error) {
+        // debug start
+        // console.log("fuck wypipo")
+        // const newMachine: LaundryMachine = {
+        //   location: selectedLocation,
+        //   room: selectedRoom,
+        //   machine: selectedMachine,
+        // };
+        // addMachineToLocalStorage(newMachine);
+        // debug end
         setResponse({ status: 500, message: error.message });
       } else {
         setResponse({ status: 500, message: 'An unknown error occurred' });
@@ -479,6 +530,21 @@ const LaundryMachineSelector: React.FC<LaundryMachineSelectorProps> = ({ selecte
     } finally {
       setIsLoading(false);
       setOpen(false);
+    }
+  };
+
+  const addMachineToLocalStorage = (newMachine: LaundryMachine) => {
+    const storedMachines = JSON.parse(localStorage.getItem('laundryMachines') || '[]') as LaundryMachine[];
+    
+    const isDuplicate = storedMachines.some(machine => 
+      machine.location === newMachine.location &&
+      machine.room === newMachine.room &&
+      machine.machine === newMachine.machine
+    );
+
+    if (!isDuplicate) {
+      storedMachines.push(newMachine);
+      localStorage.setItem('laundryMachines', JSON.stringify(storedMachines));
     }
   };
 

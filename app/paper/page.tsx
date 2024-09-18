@@ -20,17 +20,21 @@ import {
 } from "@/components/ui/accordion";
 import { Gallery, Item } from 'react-photoswipe-gallery'
 import 'photoswipe/dist/photoswipe.css'
+import { useRouter } from 'next/navigation';
 
 const PaperPage: React.FC = () => {
+  const router = useRouter();
   return (
     <div className="bg-background min-h-screen py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <Link href="/" passHref legacyBehavior>
-                <BreadcrumbLink>Home</BreadcrumbLink>
-              </Link>
+              <span>
+                <BreadcrumbLink>
+                  <button onClick={() => router.back()}>Back</button>
+                </BreadcrumbLink>
+              </span>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>

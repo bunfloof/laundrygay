@@ -63,6 +63,12 @@ interface AvailableClient {
   room: string;
 }
 
+interface LaundryMachine {
+  location: string;
+  room: string;
+  machine: string;
+}
+
 interface WsMachine {
   cycleType: number;
   keypadSelect: string;
@@ -324,6 +330,41 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
       });
       const data: string = await res.text();
       setResponse({ status: res.status, message: data });
+
+      if (res.ok && !data.toLowerCase().includes('error')) {
+        const newMachine: LaundryMachine = {
+          location: selectedMachineData.locationId,
+          room: selectedMachineData.roomId,
+          machine: selectedMachineData.licensePlate,
+        };
+        addMachineToLocalStorage(newMachine);
+
+        const email = localStorage.getItem('email');
+        const offsetTime = localStorage.getItem('offsetTime');
+
+        if (email && email.trim() !== '' && offsetTime && offsetTime.trim() !== '') {
+          try {
+            const emailRes = await fetch('https://laundry.ucsc.gay/email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...newMachine,
+                email,
+                offset_time: parseInt(offsetTime),
+              }),
+            });
+
+            if (!emailRes.ok) {
+              console.error('Failed to set up email notification');
+            }
+          } catch (emailError) {
+            console.error('Error setting up email notification:', emailError);
+          }
+        }
+
+      }
     } catch (error) {
       if (error instanceof Error) {
         setResponse({ status: 500, message: error.message });
@@ -336,6 +377,21 @@ const QrReaderWithConfirmation: React.FC<QrReaderProps> = ({ selectedAPI }) => {
     }
   };
 
+  const addMachineToLocalStorage = (newMachine: LaundryMachine) => {
+    const storedMachines = JSON.parse(localStorage.getItem('laundryMachines') || '[]') as LaundryMachine[];
+    
+    const isDuplicate = storedMachines.some(machine => 
+      machine.location === newMachine.location &&
+      machine.room === newMachine.room &&
+      machine.machine === newMachine.machine
+    );
+
+    if (!isDuplicate) {
+      storedMachines.push(newMachine);
+      localStorage.setItem('laundryMachines', JSON.stringify(storedMachines));
+    }
+  };
+  
   useEffect(() => {
     const defaultTab = localStorage.getItem('defaultTab');
     setIsDefault(defaultTab === 'laundryqrscanner');

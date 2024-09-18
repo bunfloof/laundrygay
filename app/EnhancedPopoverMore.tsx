@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { MailPlus, ChevronRight } from 'lucide-react';
 
 interface EnhancedPopoverProps {
   agreed: boolean;
   setAgreed: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const EnhancedPopover: React.FC<EnhancedPopoverProps> = ({ agreed, setAgreed }) => {
+const EnhancedPopoverMore: React.FC<EnhancedPopoverProps> = ({ agreed, setAgreed }) => {
   const [copyButtonText, setCopyButtonText] = useState('Copy Username');
   const [countdown, setCountdown] = useState(5);
   const [isOpen, setIsOpen] = useState(false);
@@ -47,8 +48,18 @@ const EnhancedPopover: React.FC<EnhancedPopoverProps> = ({ agreed, setAgreed }) 
   return (
     <Popover onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <div className="cursor-pointer p-0 h-auto text-sm text-muted-foreground hover:text-foreground transition-colors">
-          Support
+        <div 
+          className="flex items-center justify-between py-3 text-sm cursor-pointer hover:bg-secondary/50 rounded-md transition-colors"
+        >
+          <div className='pl-2'>
+            <div className="flex items-center">
+              <MailPlus className="w-5 h-5 mr-3 text-muted-foreground" />
+              <span>Contact Support</span>
+            </div>
+          </div>
+          <div className='pr-1'>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </div>
         </div>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0 overflow-hidden">
@@ -103,4 +114,4 @@ const EnhancedPopover: React.FC<EnhancedPopoverProps> = ({ agreed, setAgreed }) 
   );
 };
 
-export default EnhancedPopover;
+export default EnhancedPopoverMore;
